@@ -1,30 +1,43 @@
 require 'aws-sdk-secretsmanager'
+
 require 'json'
 
-def get_secret(secret_name)
-  region_name = 'your-aws-region'  # example, 'us-west-2'
+class FetchSecret
+  def execute
+    secret_name = 'your-secret-name'
 
-  # Create a Secrets Manager client
-  client = Aws::SecretsManager::Client.new(region: region_name)
+    region_name = 'us-west-2'
 
-  begin
-    # Retrieve the secret value
-    response = client.get_secret_value(secret_id: secret_name)
-    secret = response.secret_string
-    JSON.parse(secret)  # put json for now until can ask
-  rescue Aws::SecretsManager::Errors::ServiceError => e
-    puts "Error retrieving secret: #{e.message}"
-    nil
+    secret = get_secret(secret_name, region_name)
+
+    if secret
+
+      rds_key = secret['rds_key']
+
+      puts "RDS Key: #{rds_key}"
+
+    else
+
+      puts 'Failed to retrieve the secret from AWS Secrets Manager.'
+
+    end
+  end
+
+  def get_secret(secret_name, region_name)
+    client = Aws::SecretsManager::Client.new(region: region_name)
+
+    begin
+      response = client.get_secret_value(secret_id: secret_name)
+
+      secret = JSON.parse(response.secret_string) if response.secret_string
+
+      secret
+    rescue Aws::SecretsManager::Errors::ServiceError => e
+      puts "Error retrieving secret: #{e.message}"
+
+      nil
+    end
   end
 end
 
-# Usage example
-secret_name = 'your-secret-name'  # The name of my secret in Secrets Manager
-secret = get_secret(secret_name)
-
-if secret
-  rds_key = secret['rds_key']  # Adjust based on my secret's JSON structure
-  puts "RDS Key: #{rds_key}"
-else
-  puts "Failed to retrieve the secret."
-end
+FetchSecret.new.execute # calls upon the class method to run
