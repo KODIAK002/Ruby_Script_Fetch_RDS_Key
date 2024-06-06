@@ -2,6 +2,29 @@ require 'aws-sdk-secretsmanager'
 require 'json'
 
 class FetchSecret
+  def get_secret(secret_name, region_name)
+    client = Aws::SecretsManager::Client.new(
+    region: 'us-west-2',
+    credentials: Aws.config[:credentials]
+    )
+
+    begin
+      response = client.get_secret_value(secret_id: 'rds!cluster-95540029-b00e-44a4-a6c7-be31c5224351')
+
+      if response.secret_string
+        JSON.parse(response.secret_string)
+      else
+        puts "Secret string is empty for secret: #{secret_name}"
+      end
+
+    rescue Aws::SecretsManager::Errors::ServiceError => e
+      puts "Error retrieving secret: #{e.message}"
+    rescue => e
+      puts "Unexpected error: #{e.message}"
+    end
+  end
+
+
   def execute
     puts 'Enter your AWS Access Key ID:'
     access_key_id = gets.chomp
@@ -19,36 +42,20 @@ class FetchSecret
         credentials: Aws::Credentials.new(access_key_id, secret_access_key)
       })
 
-      # Retrieve the secret
-      secret_name = 'your-secret-name'
+      secret_name = 'rds!cluster-95540029-b00e-44a4-a6c7-be31c5224351'
+      puts "Retrieving secret: #{secret_name}"
+
       secret = get_secret(secret_name, region_name)
 
       if secret
-        rds_key = secret['rds_key']
-        puts "RDS Key: #{rds_key}"
+        puts "Retrieved RDS secret: #{secret}"
       else
-        puts 'Failed to retrieve the secret from AWS Secrets Manager.'
+        puts "Failed to retrieve secret: #{secret_name}"
       end
+
     rescue Aws::Errors::ServiceError => e
-      puts "Error validating credentials: #{e.message}"
-    end
-  end
-
-  def get_secret(secret_name, region_name)
-    client = Aws::SecretsManager::Client.new(region: region_name)
-
-    begin
-      response = client.get_secret_value(secret_id: secret_name)
-
-      secret = JSON.parse(response.secret_string) if response.secret_string
-
-      secret
-    rescue Aws::SecretsManager::Errors::ServiceError => e
-      puts "Error retrieving secret: #{e.message}"
-
-      nil
+      puts "Error: #{e.message}"
     end
   end
 end
-
 FetchSecret.new.execute # calls upon the class method to run

@@ -1,0 +1,14 @@
+    # Retrieve the secret
+      secret_name = 'rds!cluster-95540029-b00e-44a4-a6c7-be31c5224351'
+      secret = get_secret(secret_name, region_name)
+
+if secret
+        rds_key = secret['rds_key']
+        puts "RDS Key: #{rds_key}"
+      else
+        puts 'Failed to retrieve the secret from AWS Secrets Manager.'
+      end
+    rescue Aws::Errors::ServiceError => e
+      puts "Error validating credentials: #{e.message}"
+    end
+  end
