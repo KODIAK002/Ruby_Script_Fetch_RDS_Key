@@ -1,25 +1,36 @@
 require 'aws-sdk-secretsmanager'
-
 require 'json'
 
 class FetchSecret
   def execute
-    secret_name = 'your-secret-name'
+    puts 'Enter your AWS Access Key ID:'
+    access_key_id = gets.chomp
 
-    region_name = 'us-west-2'
+    puts 'Enter your AWS Secret Access Key:'
+    secret_access_key = gets.chomp
 
-    secret = get_secret(secret_name, region_name)
+    puts 'Enter your default region name (e.g. us-west-2):'
+    region_name = gets.chomp
 
-    if secret
+    # Validate the credentials
+    begin
+      Aws.config.update({
+        region: region_name,
+        credentials: Aws::Credentials.new(access_key_id, secret_access_key)
+      })
 
-      rds_key = secret['rds_key']
+      # Retrieve the secret
+      secret_name = 'your-secret-name'
+      secret = get_secret(secret_name, region_name)
 
-      puts "RDS Key: #{rds_key}"
-
-    else
-
-      puts 'Failed to retrieve the secret from AWS Secrets Manager.'
-
+      if secret
+        rds_key = secret['rds_key']
+        puts "RDS Key: #{rds_key}"
+      else
+        puts 'Failed to retrieve the secret from AWS Secrets Manager.'
+      end
+    rescue Aws::Errors::ServiceError => e
+      puts "Error validating credentials: #{e.message}"
     end
   end
 

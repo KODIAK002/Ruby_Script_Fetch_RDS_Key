@@ -2,6 +2,7 @@
 
 source 'https://rubygems.org'
 
+gem 'aws-sdk'
 gem 'aws-sdk-secretsmanager'
 gem 'pry'
 gem 'pry-nav'
